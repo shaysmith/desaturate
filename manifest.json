@@ -3,6 +3,12 @@
   "name": "Desat",
   "version": "1.0",
   "description": "Right-click images or page to toggle desaturation for images and favicons, per-image, per-domain, or all at once.",
+  "icons": {
+    "16": "icons/desat-16.png",
+    "32": "icons/desat-32.png",
+    "48": "icons/desat-48.png",
+    "128": "icons/desat-128.png"
+  },
   "permissions": ["contextMenus", "storage"],
   "background": {
     "service_worker": "background.js"
@@ -15,6 +21,12 @@
     }
   ],
   "action": {
+    "default_icon": {
+      "16": "icons/desat-16.png",
+      "32": "icons/desat-32.png",
+      "48": "icons/desat-48.png",
+      "128": "icons/desat-128.png"
+    },
     "default_title": "Desat"
   }
 }
