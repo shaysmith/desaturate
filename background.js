@@ -24,22 +24,17 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   // Handle toggle-all action: images + favicon
   if (info.menuItemId === "toggleAllDomain") {
-    let pageUrl = info.pageUrl || (tab && tab.url);
+    const pageUrl = info.pageUrl || (tab && tab.url);
     if (!pageUrl) return;
-    let domain;
     try {
-      domain = new URL(pageUrl).hostname;
-    } catch (e) {
-      console.error("Invalid page URL:", pageUrl, e);
-      return;
-    }
-    chrome.storage.local.get({ domains: {}, faviconDomains: {} }, (data) => {
-      let domains = data.domains;
-      let fD = data.faviconDomains;
-      let isCurrentlyAll = !!domains[domain] && !!fD[domain];
+      const domain = new URL(pageUrl).hostname;
+      const data = await chrome.storage.local.get({ domains: {}, faviconDomains: {} });
+      const { domains, faviconDomains: fD } = data;
+      const isCurrentlyAll = !!domains[domain] && !!fD[domain];
+      
       if (isCurrentlyAll) {
         delete domains[domain];
         delete fD[domain];
@@ -47,74 +42,75 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         domains[domain] = true;
         fD[domain] = true;
       }
-      chrome.storage.local.set({ domains, faviconDomains: fD });
-    });
+      await chrome.storage.local.set({ domains, faviconDomains: fD });
+    } catch (e) {
+      console.error("Invalid page URL or storage error:", e);
+    }
     return;
   }
+
   // Handle per-image toggle
   if (info.menuItemId === "toggleImage") {
     if (!info.srcUrl) return;
-    let imageUrl = info.srcUrl;
+    const imageUrl = info.srcUrl;
     try {
-      chrome.storage.local.get({ images: {} }, (data) => {
-        let images = data.images;
-        if (images[imageUrl]) {
-          delete images[imageUrl];
-        } else {
-          images[imageUrl] = true;
-        }
-        chrome.storage.local.set({ images });
-      });
+      const data = await chrome.storage.local.get({ images: {} });
+      const { images } = data;
+      if (images[imageUrl]) {
+        delete images[imageUrl];
+      } else {
+        images[imageUrl] = true;
+      }
+      await chrome.storage.local.set({ images });
     } catch (e) {
-      console.error("Invalid image URL:", info.srcUrl, e);
+      console.error("Invalid image URL or storage error:", e);
     }
     return;
   }
+
   // Handle per-domain image toggle
   if (info.menuItemId === "toggleDomain") {
-    let domain;
     try {
+      let domain;
       if (info.srcUrl) {
         domain = new URL(info.srcUrl).hostname;
       } else {
-        let pageUrl = info.pageUrl || (tab && tab.url);
+        const pageUrl = info.pageUrl || (tab && tab.url);
         if (!pageUrl) return;
         domain = new URL(pageUrl).hostname;
       }
-      chrome.storage.local.get({ domains: {} }, (data) => {
-        let domains = data.domains;
-        if (domains[domain]) {
-          delete domains[domain];
-        } else {
-          domains[domain] = true;
-        }
-        chrome.storage.local.set({ domains });
-      });
+      
+      const data = await chrome.storage.local.get({ domains: {} });
+      const { domains } = data;
+      if (domains[domain]) {
+        delete domains[domain];
+      } else {
+        domains[domain] = true;
+      }
+      await chrome.storage.local.set({ domains });
     } catch (e) {
-      console.error("Invalid URL for domain toggle:", e);
+      console.error("Invalid URL for domain toggle or storage error:", e);
     }
     return;
   }
+
   // Handle favicon toggle
   if (info.menuItemId === "toggleFavicon") {
-    let pageUrl = info.pageUrl || (tab && tab.url);
+    const pageUrl = info.pageUrl || (tab && tab.url);
     if (!pageUrl) return;
-    let domain;
     try {
-      domain = new URL(pageUrl).hostname;
-    } catch (e) {
-      console.error("Invalid page URL:", pageUrl, e);
-      return;
-    }
-    chrome.storage.local.get({ faviconDomains: {} }, (data) => {
-      let fD = data.faviconDomains;
+      const domain = new URL(pageUrl).hostname;
+      const data = await chrome.storage.local.get({ faviconDomains: {} });
+      const { faviconDomains: fD } = data;
       if (fD[domain]) {
         delete fD[domain];
       } else {
         fD[domain] = true;
       }
-      chrome.storage.local.set({ faviconDomains: fD });
-    });
+      await chrome.storage.local.set({ faviconDomains: fD });
+    } catch (e) {
+      console.error("Invalid page URL or storage error:", e);
+    }
     return;
   }
 });
